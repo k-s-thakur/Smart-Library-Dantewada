@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Architecture Overview</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px 32px 32px 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            display: inline-block;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 12px;
+        }
+        .header h1 {
+            color: #1e3a8a;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <script src="mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#e0f2fe',
+                primaryTextColor: '#0f172a',
+                primaryBorderColor: '#38bdf8',
+                lineColor: '#2563eb',
+                secondaryColor: '#fef3c7',
+                tertiaryColor: '#f1f5f9',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontSize: '14px'
+            },
+            flowchart: {
+                curve: 'basis',
+                nodeSpacing: 45,
+                rankSpacing: 45
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Smart Library System Architecture Overview</h1>
+            <p>End-to-End Client, Gateway, Core Microservices, Storage & IoT Hardware Layer</p>
+        </div>
+        <div class="mermaid">
+flowchart TD
+    subgraph Clients["1. Client Layer"]
+        WP["Web Portal (Patrons & Staff)\nNext.js + Tailwind CSS"]
+        MA["Mobile App (Virtual ID & Search)\nReact Native / Flutter"]
+        KS["Self-Checkout & Return Kiosk\nElectron / Touch UI"]
+        HW["Handheld Audit Wand App\nAndroid Barcode/RFID"]
+    end
+
+    subgraph Gateway["2. API & IoT Gateway"]
+        AG["API Gateway / Reverse Proxy\nNginx / Traefik"]
+        MQTT_B["MQTT Broker\nMosquitto / EMQX"]
+        WS["WebSocket Server\nReal-time Seat & Chute Updates"]
+    end
+
+    subgraph CoreServices["3. Application Core Services"]
+        AUTH["Auth & IAM Service\nSSO / JWT / RBAC"]
+        CATALOG["Catalog & Inventory\nISBN auto-fill / MARC21 / DDC"]
+        CIRC["Circulation Engine\nLoans, Returns, Holds, SIP2"]
+        BILLING["Fine & Payment Engine\nDaily calculations, Stripe / UPI"]
+        SEAT["Seat & Room Booking\n2D Live Floor Map & Auto-release"]
+        IOT_SRV["IoT & Hardware Service\nEAS Gates, RFID Reader Driver"]
+    end
+
+    subgraph Storage["4. Data & Search Layer"]
+        PG[("PostgreSQL\nACID Loans, Users, Inventory")]
+        REDIS[("Redis\nLocks, Sessions, Seat State")]
+        SEARCH[("Meilisearch\nInstant Fuzzy Book Search")]
+    end
+
+    subgraph Hardware["5. Physical IoT & Hardware Layer"]
+        RFID_PAD["Multi-Tag RFID Checkout Pad\n(ISO 15693 / ISO 28560)"]
+        EAS_GATES["RFID Anti-Theft EAS Security Gates\n(AFI/EAS Bit Detection)"]
+        DROP_BOX["Smart Book Return Chute\n(Internal RFID Antenna)"]
+        SEAT_SENSORS["PIR / Presence Sensors / QR Badges\n(ESP32 / BLE)"]
+    end
+
+    Clients --> AG
+    AG --> CoreServices
+    Hardware -->|MQTT / Serial / WebSockets| MQTT_B
+    MQTT_B --> IOT_SRV
+    WS <--> CoreServices
+    CoreServices --> Storage
+        </div>
+    </div>
+</body>
+</html>

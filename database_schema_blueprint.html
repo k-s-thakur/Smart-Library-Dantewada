@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Schema Blueprint</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px 32px 32px 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            display: inline-block;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 12px;
+        }
+        .header h1 {
+            color: #065f46;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <script src="mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#ecfdf5',
+                primaryTextColor: '#064e3b',
+                primaryBorderColor: '#34d399',
+                lineColor: '#059669',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                fontSize: '13px'
+            },
+            er: {
+                diagramPadding: 20,
+                layoutDirection: 'TB',
+                minEntityWidth: 140,
+                minEntityHeight: 80,
+                entityPadding: 15,
+                stroke: '#059669',
+                fill: '#f0fdf4',
+                fontSize: 12
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Smart Library Database Schema Blueprint</h1>
+            <p>Entity-Relationship Diagram (ERD): Users, Catalog, Copies, RFID Tags, Loans, Fines & Seats</p>
+        </div>
+        <div class="mermaid">
+erDiagram
+    USERS ||--o{ LOANS : borrows
+    USERS ||--o{ FINES : incurs
+    USERS ||--o{ RESERVATIONS : places
+    USERS ||--o{ SEAT_BOOKINGS : reserves
+
+    BOOKS ||--o{ BOOK_COPIES : contains
+    BOOK_COPIES ||--o{ LOANS : involved_in
+    BOOK_COPIES ||--o{ RFID_TAGS : bound_to
+
+    SEATS ||--o{ SEAT_BOOKINGS : allocated_for
+
+    USERS {
+        uuid id PK
+        string roll_number UK
+        string name
+        string email UK
+        enum role "STUDENT, FACULTY, LIBRARIAN, ADMIN"
+        string rfid_card_uid
+        int max_borrow_limit
+        boolean is_active
+    }
+
+    BOOKS {
+        uuid id PK
+        string isbn UK
+        string title
+        string author
+        string publisher
+        string ddc_classification
+        string cover_image_url
+        int publication_year
+    }
+
+    BOOK_COPIES {
+        uuid id PK
+        uuid book_id FK
+        string barcode UK
+        string call_number
+        enum status "AVAILABLE, BORROWED, RESERVED, LOST, MAINTENANCE"
+        string shelf_location
+    }
+
+    RFID_TAGS {
+        uuid id PK
+        string epc_or_uid UK
+        uuid copy_id FK
+        boolean eas_security_bit
+        timestamp last_scanned_at
+    }
+
+    LOANS {
+        uuid id PK
+        uuid user_id FK
+        uuid copy_id FK
+        timestamp borrowed_at
+        timestamp due_date
+        timestamp returned_at
+        enum status "ACTIVE, RETURNED, OVERDUE"
+    }
+
+    FINES {
+        uuid id PK
+        uuid loan_id FK
+        uuid user_id FK
+        decimal amount
+        enum status "UNPAID, PAID, WAIVED"
+        timestamp paid_at
+    }
+
+    SEATS {
+        uuid id PK
+        string seat_number
+        string room_name
+        int floor
+        string qr_code_identifier
+        enum status "AVAILABLE, OCCUPIED, MAINTENANCE"
+    }
+
+    SEAT_BOOKINGS {
+        uuid id PK
+        uuid user_id FK
+        uuid seat_id FK
+        timestamp start_time
+        timestamp end_time
+        timestamp checked_in_at
+        enum status "BOOKED, CHECKED_IN, CANCELLED, COMPLETED"
+    }
+        </div>
+    </div>
+</body>
+</html>

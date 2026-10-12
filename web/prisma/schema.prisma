@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("STUDENT") // ADMIN, LIBRARIAN, STUDENT
+  patronId     String?  @unique
+  patron       Patron?  @relation(fields: [patronId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model BorrowingPolicy {
+  id               String   @id @default(uuid())
+  patronType       String   @unique // UNDERGRADUATE, POSTGRADUATE, FACULTY, STAFF, OTHER
+  maxBooks         Int      @default(4)
+  loanDurationDays Int      @default(14)
+  gracePeriodDays  Int      @default(2)
+  fineRatePerDay   Float    @default(2.0)
+  maxFine          Float    @default(200.0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Patron {
+  id              String            @id @default(uuid())
+  institutionalId String            @unique
+  fullName        String
+  email           String            @unique
+  phone           String?
+  department      String?
+  program         String?
+  batch           String?
+  patronType      String            @default("UNDERGRADUATE") // UNDERGRADUATE, POSTGRADUATE, FACULTY, STAFF
+  status          String            @default("ACTIVE") // ACTIVE, SUSPENDED, INACTIVE
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  user            User?
+  cards           PatronCard[]
+  loans           Loan[]
+  fines           FineTransaction[]
+  gateSessions    GateSession[]
+}
+
+model PatronCard {
+  id        String   @id @default(uuid())
+  patronId  String
+  cardUid   String   @unique
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE, LOST
+  issuedAt  DateTime @default(now())
+  patron    Patron   @relation(fields: [patronId], references: [id], onDelete: Cascade)
+}
+
+model Book {
+  id              String     @id @default(uuid())
+  isbn            String     @unique
+  title           String
+  subtitle        String?
+  authors         String
+  publisher       String?
+  edition         String?
+  publicationYear Int?
+  language        String?    @default("English")
+  category        String?
+  ddcCode         String?
+  coverImageUrl   String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  copies          BookCopy[]
+}
+
+model BookCopy {
+  id            String   @id @default(uuid())
+  bookId        String
+  copyNumber    Int
+  barcode       String   @unique
+  rfidTagUid    String   @unique
+  shelfLocation String?
+  status        String   @default("AVAILABLE") // AVAILABLE, ISSUED, OVERDUE, LOST, DAMAGED, WITHDRAWN, PROCESSING
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  book          Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  loans         Loan[]
+}
+
+model Loan {
+  id          String            @id @default(uuid())
+  copyId      String
+  patronId    String
+  issuedAt    DateTime          @default(now())
+  dueDate     DateTime
+  returnedAt  DateTime?
+  status      String            @default("ACTIVE") // ACTIVE, RETURNED, OVERDUE
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  copy        BookCopy          @relation(fields: [copyId], references: [id], onDelete: Restrict)
+  patron      Patron            @relation(fields: [patronId], references: [id], onDelete: Restrict)
+  fines       FineTransaction[]
+}
+
+model FineTransaction {
+  id        String    @id @default(uuid())
+  loanId    String
+  patronId  String
+  amount    Float
+  status    String    @default("UNPAID") // UNPAID, PAID, WAIVED
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  loan      Loan      @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  patron    Patron    @relation(fields: [patronId], references: [id], onDelete: Cascade)
+}
+
+model GateSession {
+  id              String      @id @default(uuid())
+  patronId        String
+  entryTime       DateTime    @default(now())
+  exitTime        DateTime?
+  durationMinutes Int?
+  status          String      @default("OPEN") // OPEN, CLOSED
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  patron          Patron      @relation(fields: [patronId], references: [id], onDelete: Cascade)
+  events          GateEvent[]
+}
+
+model GateEvent {
+  id           String       @id @default(uuid())
+  sessionId    String?
+  deviceId     String
+  eventType    String // ENTRY, EXIT
+  cardUid      String
+  rawTimestamp DateTime     @default(now())
+  status       String       @default("ACCEPTED") // ACCEPTED, REJECTED
+  reason       String?
+  createdAt    DateTime     @default(now())
+  session      GateSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+}
+
+model Device {
+  id         String    @id @default(uuid())
+  deviceId   String    @unique
+  name       String
+  deviceType String // DESK_READER, GATE_ENTRY, GATE_EXIT
+  status     String    @default("ONLINE") // ONLINE, OFFLINE
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model DeviceEvent {
+  id               String   @id @default(uuid())
+  eventId          String   @unique
+  deviceId         String
+  eventType        String
+  cardUid          String?
+  payloadJson      String
+  serverReceivedAt DateTime @default(now())
+  processedStatus  String   @default("PROCESSED") // PROCESSED, FAILED, DUPLICATE
+  createdAt        DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  action       String // BOOK_CREATED, LOAN_CREATED, LOAN_RETURNED, etc.
+  entityType   String
+  entityId     String?
+  metadataJson String?
+  ipAddress    String?
+  timestamp    DateTime @default(now())
+}

@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model StaffUser {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         String     @default("LIBRARIAN") // SUPER_ADMIN, LIBRARY_ADMIN, LIBRARIAN, ACCOUNTS_OPERATOR, APPROVING_OFFICER
+  status       String     @default("ACTIVE")    // ACTIVE, SUSPENDED
+  phone        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Member {
+  id               String        @id @default(uuid())
+  memberNo         String        @unique // e.g. GPL-2026-0001
+  fullName         String
+  email            String        @unique
+  phone            String?
+  address          String?
+  category         String        @default("GENERAL_CITIZEN") // GENERAL_CITIZEN, STUDENT, SENIOR_CITIZEN, RESEARCHER, GOVT_STAFF
+  status           String        @default("ACTIVE")          // ACTIVE, EXPIRED, SUSPENDED, CLOSED
+  registrationDate DateTime      @default(now())
+  expiryDate       DateTime
+  maxBooks         Int           @default(3)
+  loans            Loan[]
+  reservations     Reservation[]
+  feeCharges       FeeCharge[]
+  payments         Payment[]
+  receipts         Receipt[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Author {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  biography String?
+  books     BookAuthor[]
+  createdAt DateTime     @default(now())
+}
+
+model Publisher {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  address   String?
+  books     Book[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String   @unique
+  ddcPrefix String?
+  books     Book[]
+  createdAt DateTime @default(now())
+}
+
+model Book {
+  id              String        @id @default(uuid())
+  isbn            String        @unique
+  title           String
+  subtitle        String?
+  edition         String?
+  publicationYear Int?
+  language        String        @default("Hindi/English")
+  ddcCode         String?       // Dewey Decimal Classification (e.g., 005.133)
+  bookNumber      String?       // Cutter / Book Number
+  description     String?
+  coverImageUrl   String?
+  publisherId     String?
+  publisher       Publisher?    @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  categoryId      String?
+  category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  authors         BookAuthor[]
+  copies          BookCopy[]
+  reservations    Reservation[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model BookAuthor {
+  id        String   @id @default(uuid())
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([bookId, authorId])
+}
+
+model BookCopy {
+  id              String   @id @default(uuid())
+  bookId          String
+  book            Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  accessionNo     String   @unique // Accession Number (e.g. ACC-2026-0012)
+  copyNumber      Int      @default(1)
+  qrCodeToken     String   @unique // Token encoded in physical QR sticker
+  shelfLocation   String?  // Rack/Shelf (e.g., "Aisle 3, Shelf B2")
+  acquisitionDate DateTime @default(now())
+  acquisitionCost Float?
+  condition       String   @default("GOOD") // NEW, GOOD, FAIR, POOR
+  status          String   @default("AVAILABLE") // AVAILABLE, ISSUED, RESERVED, REFERENCE_ONLY, LOST, DAMAGED, WITHDRAWN
+  loans           Loan[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LibraryPolicy {
+  id               String   @id @default(uuid())
+  category         String   @unique // GENERAL_CITIZEN, STUDENT, SENIOR_CITIZEN, RESEARCHER, GOVT_STAFF
+  loanDurationDays Int      @default(14)
+  maxBooks         Int      @default(3)
+  gracePeriodDays  Int      @default(2)
+  fineRatePerDay   Float    @default(2.0)
+  maxFine          Float    @default(150.0)
+  allowRenewal     Boolean  @default(true)
+  renewalLimit     Int      @default(2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Loan {
+  id           String      @id @default(uuid())
+  copyId       String
+  copy         BookCopy    @relation(fields: [copyId], references: [id], onDelete: Restrict)
+  memberId     String
+  member       Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  issuedAt     DateTime    @default(now())
+  dueDate      DateTime
+  returnedAt   DateTime?
+  renewalCount Int         @default(0)
+  status       String      @default("ACTIVE") // ACTIVE, RETURNED, OVERDUE
+  issuedBy     String
+  returnedBy   String?
+  feeCharges   FeeCharge[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Reservation {
+  id            String    @id @default(uuid())
+  bookId        String
+  book          Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  queuePosition Int       @default(1)
+  status        String    @default("PENDING") // PENDING, READY_FOR_PICKUP, FULFILLED, EXPIRED, CANCELLED
+  reservedAt    DateTime  @default(now())
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model FeeCharge {
+  id           String              @id @default(uuid())
+  memberId     String
+  member       Member              @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  loanId       String?
+  loan         Loan?               @relation(fields: [loanId], references: [id], onDelete: SetNull)
+  chargeType   String              // MEMBERSHIP_FEE, RENEWAL_FEE, LATE_FINE, LOST_BOOK, DAMAGED_BOOK, OTHER_FEE
+  description  String?
+  amount       Float               // Assessed amount
+  paidAmount   Float               @default(0.0)
+  balance      Float               // Remaining balance
+  status       String              @default("OUTSTANDING") // OUTSTANDING, PARTIALLY_PAID, PAID, WAIVED
+  waivedAmount Float               @default(0.0)
+  waiverReason String?
+  waivedBy     String?
+  allocations  PaymentAllocation[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+model Payment {
+  id              String              @id @default(uuid())
+  memberId        String
+  member          Member              @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  amount          Float
+  paymentMethod   String              // CASH, MANUAL_CHALLAN, DEMAND_DRAFT, OTHER_APPROVED
+  referenceNumber String?
+  idempotencyKey  String?             @unique
+  operatorId      String
+  status          String              @default("POSTED") // POSTED, REVERSED
+  allocations     PaymentAllocation[]
+  receipt         Receipt?
+  reversal        PaymentReversal?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+model PaymentAllocation {
+  id        String    @id @default(uuid())
+  paymentId String
+  payment   Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  chargeId  String
+  charge    FeeCharge @relation(fields: [chargeId], references: [id], onDelete: Restrict)
+  amount    Float
+  createdAt DateTime  @default(now())
+}
+
+model ReceiptSequence {
+  id         String   @id @default(uuid())
+  prefix     String   @unique // e.g., "RCP-202610"
+  lastNumber Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
+model Receipt {
+  id          String   @id @default(uuid())
+  receiptNo   String   @unique
+  paymentId   String   @unique
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  issueDate   DateTime @default(now())
+  operatorId  String
+  totalAmount Float
+  status      String   @default("ISSUED") // ISSUED, CANCELLED
+  createdAt   DateTime @default(now())
+}
+
+model PaymentReversal {
+  id             String   @id @default(uuid())
+  paymentId      String   @unique
+  payment        Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  reversalReason String
+  authorizedBy   String   // Approving Officer ID/Username
+  operatorId     String
+  reversedAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  actorRole    String?
+  action       String   // BOOK_CREATED, LOAN_ISSUED, LOAN_RETURNED, PAYMENT_POSTED, PAYMENT_REVERSED, CHARGE_ASSESSED, etc.
+  entityType   String
+  entityId     String?
+  metadataJson String?
+  ipAddress    String?
+  timestamp    DateTime @default(now())
+}

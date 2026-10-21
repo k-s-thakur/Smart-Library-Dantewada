@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+@theme {
+  --color-linen: #F6F2EA;
+  --color-surface: #FBF8F2;
+  --color-charcoal: #2A2823;
+  --color-stone: #8B8678;
+  --color-sage: #7A8B6F;
+  --color-divider: rgba(42, 40, 35, 0.06);
+  --color-card-border: rgba(42, 40, 35, 0.08);
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+
+  --shadow-card: 0 1px 2px rgba(42, 40, 35, 0.04);
+  --shadow-card-hover: 0 16px 40px -16px rgba(122, 139, 111, 0.3);
+}
+
+:root {
+  --bg-linen: #F6F2EA;
+  --bg-surface: #FBF8F2;
+  --text-charcoal: #2A2823;
+  --text-stone: #8B8678;
+  --accent-sage: #7A8B6F;
+}
+
+body {
+  background-color: #F6F2EA;
+  color: #2A2823;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.65;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: rgba(122, 139, 111, 0.25);
+  color: #2A2823;
+}
+
+/* Typography Headings */
+h1, h2, h3, .font-display {
+  font-family: 'Fraunces', serif;
+  font-feature-settings: "opsz" 32;
+}
+
+/* Component Recipes from DESIGN.md */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #2A2823;
+  color: #F6F2EA;
+  border: 1px solid #2A2823;
+  border-radius: 12px;
+  padding: 13px 26px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  transition: all 400ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  cursor: pointer;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -10px rgba(122, 139, 111, 0.35);
+  filter: brightness(1.02);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #FBF8F2;
+  color: #2A2823;
+  border: 1px solid rgba(42, 40, 35, 0.14);
+  border-radius: 12px;
+  padding: 13px 26px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  transition: all 400ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  background-color: #F6F2EA;
+  border-color: rgba(42, 40, 35, 0.24);
+}
+.btn-secondary:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: transparent;
+  color: #7A8B6F;
+  border: 1px solid #7A8B6F;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  transition: all 400ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  cursor: pointer;
+}
+.btn-outline:hover {
+  background-color: rgba(122, 139, 111, 0.08);
+  transform: translateY(-1px);
+}
+.btn-outline:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: transparent;
+  color: #7A8B6F;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 6px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.005em;
+  transition: all 240ms ease;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Card Recipe from DESIGN.md */
+.linen-card {
+  background-color: #FBF8F2;
+  border: 1px solid rgba(42, 40, 35, 0.08);
+  box-shadow: 0 1px 2px rgba(42, 40, 35, 0.04);
+  border-radius: 18px;
+  padding: 32px;
+  transition: all 400ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+.linen-card-interactive:hover {
+  box-shadow: 0 16px 40px -16px rgba(122, 139, 111, 0.3);
+  transform: translateY(-3px);
+  border-color: rgba(122, 139, 111, 0.4);
+}
+
+/* Input recipe */
+.linen-input {
+  background-color: #FBF8F2;
+  border: 1px solid rgba(42, 40, 35, 0.14);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 0.9375rem;
+  color: #2A2823;
+  outline: none;
+  transition: all 240ms ease;
+}
+.linen-input:hover {
+  background-color: rgba(122, 139, 111, 0.03);
+  border-color: rgba(122, 139, 111, 0.4);
+}
+.linen-input:focus {
+  border-color: rgba(122, 139, 111, 0.6);
+  box-shadow: 0 0 0 4px rgba(122, 139, 111, 0.12);
+}
+.linen-input::placeholder {
+  color: #8B8678;
+}
+
+/* JetBrains Mono Numerals and Code */
+.font-mono-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Dedicated Print Layout */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt *, #printable-card, #printable-card *, #printable-spine, #printable-spine * {
+    visibility: visible;
+  }
+  #printable-receipt, #printable-card, #printable-spine {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+  }
+}

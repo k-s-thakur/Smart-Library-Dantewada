@@ -1,0 +1,74 @@
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import bcrypt from "bcryptjs";
+
+const JWT_SECRET_STRING = process.env.JWT_SECRET || "gplms-nic-approved-secret-jwt-key-2026-production";
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
+
+export type UserRole =
+  | "SUPER_ADMIN"
+  | "LIBRARY_ADMIN"
+  | "LIBRARIAN"
+  | "ACCOUNTS_OPERATOR"
+  | "APPROVING_OFFICER"
+  | "MEMBER"
+  | "PUBLIC_VISITOR";
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  memberId?: string | null;
+  memberNo?: string | null;
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
+}
+
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+export async function createSessionToken(user: SessionUser): Promise<string> {
+  return await new SignJWT({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    memberId: user.memberId,
+    memberNo: user.memberNo,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("7d")
+    .sign(JWT_SECRET);
+}
+
+export async function verifySessionToken(token: string): Promise<SessionUser | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return {
+      id: payload.id as string,
+      email: payload.email as string,
+      name: payload.name as string,
+      role: payload.role as UserRole,
+      memberId: (payload.memberId as string) || null,
+      memberNo: (payload.memberNo as string) || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("gplms_session")?.value;
+    if (!token) return null;
+    return await verifySessionToken(token);
+  } catch {
+    return null;
+  }
+}
